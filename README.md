@@ -61,6 +61,7 @@ setTimeout(() => { /* rickroll reveal */ }, 3000); // 3 seconds
 ### 📊 Slug Examples
 Slugs can be anything!
 The MCP server uses Cloudflare Workers AI to generate the slug.
+Cloudflare -> /cloudflare-explained-optimizing-website-performance-with-edge-computing
 San Francisco -> /sf-podcast-exploring-the-city-by-the-bay
 West Wing -> /west-wing-rewatch-podcast
 MCP -> /mcp-and-the-art-of-not-losing-your-mind
