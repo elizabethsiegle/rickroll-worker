@@ -18,31 +18,14 @@ export default {
 			
 			// Extract path info to make the rickroll look legitimate
 			const pathSegments = url.pathname.split('/').filter(p => p);
-			const resourceType = pathSegments[0] || 'general';
-			const resourceId = pathSegments[1] || 'default';
+			const topicSlug = pathSegments[0] || 'general';
+			const episodeId = pathSegments[1] || 'episode-1';
 			
-			// Create different themed rickrolls based on the path
-			let theme = 'general';
-			let title = 'Educational Resource Portal';
-			let description = 'Loading educational content...';
+			// Decode and clean the topic for display
+			const decodedTopic = decodeURIComponent(topicSlug).replace(/-/g, ' ');
 			
-			if (resourceType.includes('strawberry') || resourceType.includes('berry')) {
-				theme = 'strawberry';
-				title = 'Strawberry Cultivation Academy';
-				description = 'Loading strawberry growing expertise...';
-			} else if (resourceType.includes('farm') || resourceType.includes('agriculture')) {
-				theme = 'farming';
-				title = 'Agricultural Education Center';
-				description = 'Loading farming guidance...';
-			} else if (resourceType.includes('math') || resourceType.includes('calculation')) {
-				theme = 'math';
-				title = 'Mathematical Learning Portal';
-				description = 'Loading educational mathematics...';
-			} else if (resourceType.includes('test') || resourceType.includes('system')) {
-				theme = 'test';
-				title = 'System Educational Portal';
-				description = 'Testing educational resources...';
-			}
+			// Generate dynamic content based on the topic
+			const { theme, title, description, icon, backgroundColor } = generateTopicTheme(decodedTopic);
 
 			const html = `
 <!DOCTYPE html>
@@ -56,7 +39,7 @@ export default {
         
         body {
             font-family: 'Comic Neue', 'Comic Sans MS', cursive;
-            background: linear-gradient(135deg, #ff9a56 0%, #ff6b35 25%, #f7931e 50%, #ff8c42 75%, #ff7518 100%);
+            background: ${backgroundColor};
             color: white;
             margin: 0;
             padding: 20px;
@@ -254,6 +237,17 @@ export default {
             justify-content: center;
             min-height: calc(100vh - 80px);
         }
+
+        .topic-highlight {
+            background: rgba(255, 255, 255, 0.25);
+            padding: 15px 25px;
+            border-radius: 20px;
+            margin: 20px 0;
+            font-size: 1.3em;
+            font-weight: 700;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            text-transform: capitalize;
+        }
     </style>
 </head>
 <body>
@@ -266,19 +260,19 @@ export default {
     
     <div class="content-wrapper">
         <div class="portal">
-            <h1>📚 ${title}</h1>
+            <h1>🎙️ ${title}</h1>
             
-            <div class="theme-icon">
-                ${theme === 'strawberry' ? '🍓' : 
-                  theme === 'farming' ? '🌱' : 
-                  theme === 'math' ? '🧮' : 
-                  theme === 'test' ? '🧪' : '📖'}
+            <div class="theme-icon">${icon}</div>
+            
+            <div class="topic-highlight">
+                📻 "${decodedTopic}" Podcast Series
             </div>
             
             <div class="path-info">
-                <strong>Resource Type:</strong> ${resourceType}<br>
-                <strong>Resource ID:</strong> ${resourceId}<br>
-                <strong>Portal Status:</strong> <span id="status">Loading...</span>
+                <strong>Podcast Topic:</strong> ${decodedTopic}<br>
+                <strong>Episode ID:</strong> ${episodeId}<br>
+                <strong>Theme:</strong> ${theme}<br>
+                <strong>Status:</strong> <span id="status">Loading...</span>
             </div>
             
             <div class="loading" id="loading">
@@ -287,11 +281,11 @@ export default {
             </div>
             
             <div id="surprise" style="display: none;">
-                <div class="surprise">🎵 EDUCATIONAL SURPRISE! 🎵</div>
+                <div class="surprise">🎵 PODCAST SURPRISE! 🎵</div>
                 <div class="message">
-                    Welcome to your educational audio experience! 💕<br>
-                    Hope you enjoy this classic learning content! 😄<br>
-                    <small>Your Cloudflare educational portal strikes again!</small>
+                    Welcome to your "${decodedTopic}" podcast experience! 💕<br>
+                    Hope you enjoy this classic audio content! 😄<br>
+                    <small>Your Cloudflare podcast portal strikes again!</small>
                 </div>
                 <audio id="rickrollAudio" controls loop>
                     <source src="https://demo.twilio.com/docs/classic.mp3" type="audio/mpeg">
@@ -299,9 +293,10 @@ export default {
                 </audio>
                 <p style="font-size: 1.3em; font-weight: 700;">🎶 Never gonna give you up, never gonna let you down! 🎶</p>
                 <div class="path-info">
-                    You accessed: <code>${url.pathname}</code><br>
-                    But got educated instead! 😉<br>
-                    Portal Theme: ${theme.toUpperCase()}
+                    You requested: <code>${decodedTopic}</code><br>
+                    But got rickrolled instead! 😉<br>
+                    Original URL: <code>${url.pathname}</code><br>
+                    Podcast Theme: ${theme.toUpperCase()}
                 </div>
             </div>
         </div>
@@ -310,7 +305,7 @@ export default {
     <!-- Sticky Footer -->
     <div class="footer">
         <a href="https://github.com/elizabethsiegle/remote-mcp-server-authless-rickroll" target="_blank">
-            🚀 View Source Code on GitHub - Remote MCP Server Authless Rickroll 🚀
+            🚀 View Source Code on GitHub - Dynamic Podcast Rickroll Portal 🚀
         </a>
     </div>
 
@@ -330,11 +325,11 @@ export default {
         }
         
         // Update status
-        document.getElementById('status').textContent = 'Accessing Educational Content...';
+        document.getElementById('status').textContent = 'Loading "${decodedTopic}" podcast content...';
         
         // Show the surprise after a delay
         setTimeout(() => {
-            document.getElementById('status').textContent = 'Content Ready!';
+            document.getElementById('status').textContent = 'Podcast Ready!';
             document.getElementById('loading').style.display = 'none';
             document.getElementById('surprise').style.display = 'block';
             
@@ -403,25 +398,27 @@ export default {
 			});
 		}
 
-		// Root path shows available "educational services"
-		return new Response(`📚 Educational Resource Portal
+		// Root path shows available "podcast services"
+		return new Response(`🎙️ Dynamic Podcast Portal
 
-Welcome to our comprehensive educational platform!
+Welcome to our comprehensive podcast platform!
 
-Available Learning Centers:
-🍓 Strawberry Cultivation Academy - /strawberry-guide
-🌱 Agricultural Education Center - /farming-resources  
-🧮 Mathematical Learning Portal - /math-tutorials
-📖 General Education Hub - /learning-center
-🧪 System Testing Portal - /system-test
+Available Podcast Categories:
+🎵 Music & Entertainment
+🧠 Educational Content  
+💼 Business & Technology
+🌍 Science & Nature
+🎮 Gaming & Pop Culture
+📚 Literature & History
 
-Simply add any path to access educational resources!
+Simply add any topic to access podcast content!
 Examples:
-- /strawberry-cultivation-guide-2024
-- /agricultural-research-audio-series
-- /mathematical-education-center
+- /artificial-intelligence-deep-dive
+- /quantum-physics-explained
+- /startup-success-stories
+- /climate-change-solutions
 
-All paths lead to valuable educational content! 📚✨`, {
+All topics lead to engaging podcast experiences! 🎧✨`, {
 			headers: {
 				'Content-Type': 'text/plain',
 				...corsHeaders,
@@ -429,3 +426,105 @@ All paths lead to valuable educational content! 📚✨`, {
 		});
 	},
 };
+
+// Function to generate theme based on topic
+function generateTopicTheme(topic: string) {
+	const topicLower = topic.toLowerCase();
+	
+	// Technology/AI themes
+	if (topicLower.includes('artificial intelligence') || topicLower.includes('ai') || topicLower.includes('machine learning') || topicLower.includes('tech')) {
+		return {
+			theme: 'technology',
+			title: 'AI & Technology Podcast Hub',
+			description: 'Loading cutting-edge technology content...',
+			icon: '🤖',
+			backgroundColor: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%)'
+		};
+	}
+	
+	// Science themes
+	if (topicLower.includes('science') || topicLower.includes('physics') || topicLower.includes('chemistry') || topicLower.includes('biology')) {
+		return {
+			theme: 'science',
+			title: 'Science Discovery Podcast',
+			description: 'Loading scientific exploration content...',
+			icon: '🔬',
+			backgroundColor: 'linear-gradient(135deg, #84fab0 0%, #8fd3f4 25%, #a8edea 50%, #fed6e3 75%, #d299c2 100%)'
+		};
+	}
+	
+	// Business themes
+	if (topicLower.includes('business') || topicLower.includes('startup') || topicLower.includes('entrepreneur') || topicLower.includes('finance')) {
+		return {
+			theme: 'business',
+			title: 'Business Excellence Podcast',
+			description: 'Loading professional development content...',
+			icon: '💼',
+			backgroundColor: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 25%, #ff8a80 50%, #ff7043 75%, #bf360c 100%)'
+		};
+	}
+	
+	// Entertainment/Music themes
+	if (topicLower.includes('music') || topicLower.includes('entertainment') || topicLower.includes('movie') || topicLower.includes('celebrity')) {
+		return {
+			theme: 'entertainment',
+			title: 'Entertainment Tonight Podcast',
+			description: 'Loading entertainment content...',
+			icon: '🎵',
+			backgroundColor: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 25%, #fecfef 50%, #ff9a9e 75%, #f093fb 100%)'
+		};
+	}
+	
+	// Health/Wellness themes
+	if (topicLower.includes('health') || topicLower.includes('wellness') || topicLower.includes('fitness') || topicLower.includes('mental')) {
+		return {
+			theme: 'health',
+			title: 'Wellness & Health Podcast',
+			description: 'Loading health and wellness content...',
+			icon: '🏥',
+			backgroundColor: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 25%, #d299c2 50%, #fef9d7 75%, #ebc0fd 100%)'
+		};
+	}
+	
+	// Nature/Environment themes
+	if (topicLower.includes('nature') || topicLower.includes('environment') || topicLower.includes('climate') || topicLower.includes('wildlife')) {
+		return {
+			theme: 'nature',
+			title: 'Nature & Environment Podcast',
+			description: 'Loading environmental content...',
+			icon: '🌱',
+			backgroundColor: 'linear-gradient(135deg, #667eea 0%, #84fab0 25%, #8fd3f4 50%, #a8edea 75%, #d299c2 100%)'
+		};
+	}
+	
+	// Education themes
+	if (topicLower.includes('education') || topicLower.includes('learning') || topicLower.includes('tutorial') || topicLower.includes('academic')) {
+		return {
+			theme: 'education',
+			title: 'Educational Excellence Podcast',
+			description: 'Loading educational content...',
+			icon: '📚',
+			backgroundColor: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 25%, #ffecd2 50%, #fcb69f 75%, #ff8a80 100%)'
+		};
+	}
+	
+	// Gaming themes
+	if (topicLower.includes('gaming') || topicLower.includes('video game') || topicLower.includes('esports') || topicLower.includes('game')) {
+		return {
+			theme: 'gaming',
+			title: 'Gaming Universe Podcast',
+			description: 'Loading gaming content...',
+			icon: '🎮',
+			backgroundColor: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%)'
+		};
+	}
+	
+	// Default theme for any other topic
+	return {
+		theme: 'general',
+		title: `${topic.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} Podcast Hub`,
+		description: `Loading ${topic} podcast content...`,
+		icon: '🎙️',
+		backgroundColor: 'linear-gradient(135deg, #ff9a56 0%, #ff6b35 25%, #f7931e 50%, #ff8c42 75%, #ff7518 100%)'
+	};
+}

@@ -1,12 +1,12 @@
 ### 🎵 Universal Rickroll Worker - The Ultimate Educational Portal 🍓
 
-A Cloudflare Worker that intercepts any path and serves a rickroll.
+A Cloudflare Worker that intercepts any path, generates a dynamic webpage about the URL slug, and serves a rickroll.
 
 🌟 Overview
-This is the second half of [a MCP server that returns a link to a rickroll](https://github.com/elizabethsiegle/remote-mcp-server-authless-rickroll). It gets past Claude's URL filtering by making the LLM think it is linking to a relevant educational resource.
+This is the second half of [a MCP server that returns a link to a rickroll](https://github.com/elizabethsiegle/remote-mcp-server-authless-rickroll). It gets past Claude's URL filtering by making the LLM think it is generating a podcast about an input topic from the user (via MCP).
 
 🏗️ Architecture
-User clicks innocent link in MCP client → Worker intercepts ANY path → Serves rickroll HTML
+User clicks innocent link in MCP client → Worker intercepts ANY path → serves rickroll HTML
 
 ### 🎵 Smart Audio System
 Triple autoplay strategy:
@@ -58,23 +58,12 @@ background: linear-gradient(135deg, #your-colors);
 setTimeout(() => { /* rickroll reveal */ }, 3000); // 3 seconds
 ```
 
-### 📊 Path Examples
-🍓 Strawberry Paths
+### 📊 Slug Examples
+Slugs can be anything!
+The MCP server uses Cloudflare Workers AI to generate the slug.
+San Francisco -> /sf-podcast-exploring-the-city-by-the-bay
+West Wing -> /west-wing-rewatch-podcast
+MCP -> /mcp-and-the-art-of-not-losing-your-mind
 
-- /strawberry-cultivation-guide-2024
-- /berry-farming-best-practices
-- /strawberry-growing-masterclass
-
-🌱 Agricultural Paths
-
-- /agricultural-education-center
-- /farming-expertise-portal
-- /crop-cultivation-academy
-
-🧮 Math Paths
-
-- /mathematical-education-center
-- /calculation-learning-portal
-- /interactive-math-lessons
 
 All paths lead to the same rickroll! 🎵
