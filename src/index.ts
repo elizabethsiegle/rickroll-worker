@@ -1,3 +1,7 @@
+export interface Env {
+	AI: any;
+}
+
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		const url = new URL(request.url);
@@ -13,10 +17,440 @@ export default {
 			return new Response(null, { headers: corsHeaders });
 		}
 
-		// The GENIUS part: ANY path except root gets rickrolled!
+		// Check if this is an audio podcast request (starts with "audio-")
 		if (url.pathname !== '/' && url.pathname !== '') {
+			const slug = url.pathname.substring(1); // Remove leading slash
 			
-			// Extract path info to make the rickroll look legitimate
+			// Check if this is an audio podcast
+			if (slug.startsWith('audio-')) {
+				console.log(`Processing audio podcast request for slug: ${slug}`);
+				
+				// Extract topic from slug (remove "audio-" prefix)
+				const topicSlug = slug.replace('audio-', '');
+				const decodedTopic = decodeURIComponent(topicSlug).replace(/-/g, ' ');
+				
+				console.log(`Generating audio for topic: ${decodedTopic}`);
+				
+				// Generate script and audio dynamically
+				let script = "";
+				let audioDataUrl = "";
+				let generationError = null;
+				
+				try {
+					// Step 1: Generate script
+					const scriptMessages = [
+						{
+							role: "system",
+							content: "You are a professional podcast script writer. Create engaging, conversational podcast scripts that sound natural when spoken aloud. Keep scripts concise but informative, typically 2-3 minutes when read aloud (about 300-450 words). Use a friendly, enthusiastic tone with natural speech patterns."
+						},
+						{
+							role: "user",
+							content: `Write a brief podcast script about "${decodedTopic}". The script should start with an engaging hook, cover 2-3 key points, use natural conversational language, and end with a memorable conclusion. Return only the script text.`
+						}
+					];
+
+					console.log("Generating podcast script...");
+					const scriptResponse: any = await env.AI.run("@cf/meta/llama-4-scout-17b-16e-instruct", {
+						messages: scriptMessages,
+					});
+
+					if (scriptResponse.response) {
+						script = scriptResponse.response;
+						console.log(`Generated script: ${script.substring(0, 100)}...`);
+
+						// Step 2: Generate audio from script
+						console.log("Converting script to audio...");
+						const audioResponse: any = await env.AI.run("@cf/myshell-ai/melotts", {
+							prompt: script,
+							lang: "en",
+						});
+
+						if (audioResponse?.audio) {
+							audioDataUrl = `data:audio/mp3;base64,${audioResponse.audio}`;
+							console.log("Audio generated successfully");
+						} else {
+							throw new Error("No audio data returned");
+						}
+					} else {
+						throw new Error("Failed to generate script");
+					}
+				} catch (error) {
+					console.error("Audio generation failed:", error);
+					generationError = error;
+				}
+				
+				// Generate dynamic content based on the topic
+				const { theme, title, description, icon, backgroundColor } = generateTopicTheme(decodedTopic);
+
+				const audioPodcastHtml = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎧 ${title} - Audio Podcast</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: ${backgroundColor};
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 40px;
+        }
+        
+        .podcast-container {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            margin-bottom: 40px;
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            font-weight: 700;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .podcast-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .icon {
+            font-size: 4em;
+            margin: 20px 0;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+        }
+        
+        .audio-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 25px 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+        }
+        
+        .audio-section h2 {
+            margin-top: 0;
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+        
+        .audio-player {
+            width: 100%;
+            max-width: 500px;
+            margin: 20px auto;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .play-button {
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 20px 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.4);
+        }
+        
+        .play-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 107, 53, 0.6);
+        }
+        
+        .play-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .download-button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            color: white;
+            padding: 12px 25px;
+            font-size: 1em;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 20px 10px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .download-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+        
+        .script-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 25px 0;
+            text-align: left;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .script-section h2 {
+            margin-top: 0;
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+        
+        .script-text {
+            font-family: 'Georgia', serif;
+            line-height: 1.8;
+            font-size: 1.1em;
+            color: rgba(255, 255, 255, 0.9);
+            white-space: pre-wrap;
+        }
+        
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #ff6b35;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .success-badge {
+            display: inline-block;
+            background: rgba(76, 175, 80, 0.8);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            margin: 10px 5px;
+        }
+        
+        .error-badge {
+            display: inline-block;
+            background: rgba(244, 67, 54, 0.8);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            margin: 10px 5px;
+        }
+        
+        .back-link {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .back-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .metadata {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 25px 0;
+            font-size: 0.9em;
+        }
+        
+        .metadata-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .metadata-item strong {
+            color: rgba(255, 255, 255, 0.95);
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            .podcast-container {
+                padding: 25px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .metadata {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-link">← Home</a>
+    
+    <div class="podcast-container">
+        <div class="podcast-header">
+            <div class="icon">${icon}</div>
+            <h1>🎧 ${decodedTopic}</h1>
+            <div class="success-badge">🎵 Audio Podcast</div>
+        </div>
+        
+        <div class="metadata">
+            <div class="metadata-item">
+                <strong>📻 Topic:</strong>
+                ${decodedTopic}
+            </div>
+            <div class="metadata-item">
+                <strong>🎯 Category:</strong>
+                ${theme}
+            </div>
+            <div class="metadata-item">
+                <strong>⏱️ Duration:</strong>
+                ~2-3 minutes
+            </div>
+            <div class="metadata-item">
+                <strong>🔗 Generated:</strong>
+                Just now
+            </div>
+        </div>
+        
+        <div class="audio-section">
+            <h2>🎧 Listen to Your Podcast</h2>
+            ${audioDataUrl ? `
+                <audio id="podcastAudio" class="audio-player" controls preload="metadata">
+                    <source src="${audioDataUrl}" type="audio/mpeg">
+                    Your browser does not support the audio element.
+                </audio>
+                <div class="audio-controls">
+                    <button class="play-button" onclick="togglePlayPause()">
+                        <span id="playButtonText">▶️ Play Podcast</span>
+                    </button>
+                    <a href="${audioDataUrl}" download="podcast-${decodedTopic.replace(/\s+/g, '-')}.mp3" class="download-button">
+                        💾 Download MP3
+                    </a>
+                </div>
+                <div class="success-badge">✅ Audio Generated Successfully</div>
+            ` : `
+                <div class="loading-spinner"></div>
+                <p><strong>⚠️ Audio Generation ${generationError ? 'Failed' : 'In Progress'}</strong></p>
+                <p>${generationError ? `Error: ${generationError}` : 'Generating your podcast audio, please wait...'}</p>
+                ${generationError ? '' : '<div class="error-badge">Audio generation may take a moment</div>'}
+            `}
+        </div>
+        
+        ${script ? `
+            <div class="script-section">
+                <h2>📝 Podcast Script</h2>
+                <div class="script-text">${script.replace(/\n/g, '<br>')}</div>
+                <div class="success-badge">✅ Script Generated</div>
+            </div>
+        ` : ''}
+        
+        <div style="margin-top: 40px; padding: 25px; background: rgba(255, 255, 255, 0.1); border-radius: 15px; text-align: center;">
+            <p><strong>🎙️ AI-Generated Audio Podcast</strong></p>
+            <p>This podcast was automatically generated using Cloudflare Workers AI from your query: "${decodedTopic}"</p>
+            <p style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7);">
+                Generated on ${new Date().toLocaleString()}
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const audio = document.getElementById('podcastAudio');
+        const playButton = document.querySelector('.play-button');
+        const playButtonText = document.getElementById('playButtonText');
+        
+        function togglePlayPause() {
+            if (audio) {
+                if (audio.paused) {
+                    audio.play();
+                    playButtonText.textContent = '⏸️ Pause Podcast';
+                } else {
+                    audio.pause();
+                    playButtonText.textContent = '▶️ Play Podcast';
+                }
+            }
+        }
+        
+        if (audio) {
+            audio.addEventListener('play', () => {
+                playButtonText.textContent = '⏸️ Pause Podcast';
+            });
+            
+            audio.addEventListener('pause', () => {
+                playButtonText.textContent = '▶️ Play Podcast';
+            });
+            
+            audio.addEventListener('ended', () => {
+                playButtonText.textContent = '🔄 Play Again';
+            });
+            
+            audio.addEventListener('loadstart', () => console.log('Audio loading started'));
+            audio.addEventListener('canplay', () => console.log('Audio can start playing'));
+            audio.addEventListener('error', (e) => console.error('Audio error:', e));
+        }
+        
+        // Auto-reload if generation failed and no error shown (for retry)
+        ${!audioDataUrl && !generationError ? `
+        setTimeout(() => {
+            console.log('Reloading to retry audio generation...');
+            window.location.reload();
+        }, 5000);
+        ` : ''}
+    </script>
+</body>
+</html>`;
+
+				return new Response(audioPodcastHtml, {
+					headers: {
+						'Content-Type': 'text/html',
+						...corsHeaders,
+					},
+				});
+			}
+			
+			// For all other non-root paths, show the rickroll
 			const pathSegments = url.pathname.split('/').filter(p => p);
 			const topicSlug = pathSegments[0] || 'general';
 			const episodeId = pathSegments[1] || 'episode-1';
@@ -248,6 +682,16 @@ export default {
             border: 2px solid rgba(255, 255, 255, 0.4);
             text-transform: capitalize;
         }
+        
+        .audio-hint {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            font-size: 1em;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -266,6 +710,10 @@ export default {
             
             <div class="topic-highlight">
                 📻 "${decodedTopic}" Podcast Series
+            </div>
+            
+            <div class="audio-hint">
+                💡 <strong>Want real audio?</strong> Try: /audio-${topicSlug}
             </div>
             
             <div class="path-info">
@@ -296,7 +744,9 @@ export default {
                     You requested: <code>${decodedTopic}</code><br>
                     But got rickrolled instead! 😉<br>
                     Original URL: <code>${url.pathname}</code><br>
-                    Podcast Theme: ${theme.toUpperCase()}
+                    Podcast Theme: ${theme.toUpperCase()}<br><br>
+                    <strong>Want real audio podcasts?</strong><br>
+                    Try: <code>/audio-${topicSlug}</code>
                 </div>
             </div>
         </div>
@@ -411,14 +861,16 @@ Available Podcast Categories:
 🎮 Gaming & Pop Culture
 📚 Literature & History
 
-Simply add any topic to access podcast content!
-Examples:
-- /artificial-intelligence-deep-dive
-- /quantum-physics-explained
-- /startup-success-stories
-- /climate-change-solutions
+How to use:
+1. Regular paths (like /any-topic) = Rickroll experience 🎵
+2. Audio podcasts (like /audio-any-topic) = Real MP3 generation 🎧
 
-All topics lead to engaging podcast experiences! 🎧✨`, {
+Simply add any topic to access content!
+Examples:
+- /artificial-intelligence = Rickroll
+- /audio-artificial-intelligence = Real podcast with MP3
+
+All topics lead to engaging experiences! ✨`, {
 			headers: {
 				'Content-Type': 'text/plain',
 				...corsHeaders,

@@ -4,11 +4,14 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "rickrollworker",
+	"name": "podcaster",
 	"main": "src/index.ts",
 	"compatibility_date": "2025-05-29",
 	"observability": {
 		"enabled": true
+	},
+	"ai": {
+		"binding": "AI"
 	}
 	/**
 	 * Smart Placement
