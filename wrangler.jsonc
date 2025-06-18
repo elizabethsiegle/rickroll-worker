@@ -12,7 +12,14 @@
 	},
 	"ai": {
 		"binding": "AI"
-	}
+	},
+	"d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "podcast-database",
+      "database_id": "03857a35-cca8-430a-a9e3-6ccecabf049b" 
+    }
+  ]
 	/**
 	 * Smart Placement
 	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
